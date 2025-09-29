@@ -1,0 +1,60 @@
+{
+    "mean_time": [
+        0.0022439312934875487
+    ],
+    "std_time": [
+        0.0040215572102983285
+    ],
+    "mean_score_vol": [
+        [
+            0.0
+        ]
+    ],
+    "std_score_vol": [
+        [
+            0.0
+        ]
+    ],
+    "mean_score_surf": [
+        [
+            0.07052233345431887
+        ]
+    ],
+    "std_score_surf": [
+        [
+            0.0
+        ]
+    ],
+    "mean_rel_p": [
+        313.94971560001375
+    ],
+    "std_rel_p": [
+        0.0
+    ],
+    "mean_rel_wss": [
+        [
+            0.0,
+            0.0
+        ]
+    ],
+    "std_rel_wss": [
+        [
+            0.0,
+            0.0
+        ]
+    ],
+    "mean_score_force": [
+        [
+            0.0,
+            0.0
+        ]
+    ],
+    "std_score_force": [
+        [
+            0.0,
+            0.0
+        ]
+    ],
+    "spearman_coef_mean": 0.0,
+    "spearman_coef_std": 0.0
+}

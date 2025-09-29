@@ -28,10 +28,16 @@ val_dataset = manifest_train[-n:]
 #     val_dataset = torch.load('Dataset/val_dataset')
 #     coef_norm = torch.load('Dataset/normalization')
 # else:
-train_dataset, coef_norm = Dataset(train_dataset, norm = True, sample = None)
+train_dataset, coef_norm = Dataset(train_dataset, 
+                                   norm=True,
+                                   surface_only=True,
+                                   pressure_only=True)
 # torch.save(train_dataset, 'Dataset/train_dataset')
 # torch.save(coef_norm, 'Dataset/normalization')
-val_dataset = Dataset(val_dataset, sample = None, coef_norm = coef_norm)
+val_dataset = Dataset(val_dataset, 
+                      coef_norm=coef_norm,
+                      surface_only=True,
+                      pressure_only=True)
 # torch.save(val_dataset, 'Dataset/val_dataset')
 
 # Cuda

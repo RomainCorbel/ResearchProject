@@ -16,11 +16,8 @@ from tqdm import tqdm
 
 from pathlib import Path
 import os.path as osp
-
+'''
 def get_nb_trainable_params(model):
-   '''
-   Return the number of trainable parameters
-   '''
    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
    return sum([np.prod(p.size()) for p in model_parameters])
 
@@ -128,19 +125,6 @@ class NumpyEncoder(json.JSONEncoder):
         return super().default(obj)
 
 def main(device, train_dataset, val_dataset, Net, hparams, path, criterion = 'MSE', reg = 1, val_iter = 10, name_mod = 'GraphSAGE', val_sample = True):
-    '''
-        Args:
-        device (str): device on which you want to do the computation.
-        train_dataset (list): list of the data in the training set.
-        val_dataset (list): list of the data in the validation set.
-        Net (class): network to train.
-        hparams (dict): hyper parameters of the network.
-        path (str): where to save the trained model and the figures.
-        criterion (str, optional): chose between 'MSE', 'MAE', and 'MSE_weigthed'. The latter is the volumetric MSE plus the surface MSE computed independently. Default: 'MSE'.
-        reg (float, optional): weigth for the surface loss when criterion is 'MSE_weighted'. Default: 1.
-        val_iter (int, optional): number of epochs between each validation step. Default: 10.
-        name_mod (str, optional): type of model. Default: 'GraphSAGE'.
-    '''
     Path(path).mkdir(parents = True, exist_ok = True)
 
     model = Net.to(device)
@@ -352,4 +336,134 @@ def main(device, train_dataset, val_dataset, Net, hparams, path, criterion = 'MS
                     }, f, indent = 12, cls = NumpyEncoder
                 )
 
+    return model'''
+
+
+import time, json, random
+from pathlib import Path
+import os.path as osp
+
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+import torch
+import torch.nn.functional as F
+from torch_geometric.loader import DataLoader
+import torch_geometric.nn as nng
+
+
+def get_nb_trainable_params(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+def train_one_epoch(device, model, loader, optimizer, scheduler):
+    model.train()
+    total_loss = 0.0
+    for data in loader:
+        data = data.to(device)
+        optimizer.zero_grad()
+        out = model(data)
+        loss = F.mse_loss(out, data.y)
+        loss.backward()
+        optimizer.step()
+        scheduler.step()
+        total_loss += loss.item()
+    return total_loss / len(loader)
+
+
+@torch.no_grad()
+def evaluate(device, model, loader):
+    model.eval()
+    total_loss = 0.0
+    for data in loader:
+        data = data.to(device)
+        out = model(data)
+        loss = F.mse_loss(out, data.y)
+        total_loss += loss.item()
+    return total_loss / len(loader)
+
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        import numpy as np, torch
+        if isinstance(obj, np.generic):
+            return obj.item()
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, torch.Tensor):
+            return obj.detach().cpu().item() if obj.dim() == 0 else obj.detach().cpu().tolist()
+        return super().default(obj)
+
+
+def main(device, train_dataset, val_dataset, Net, hparams, path,
+         criterion='MSE', reg=1, val_iter=10, name_mod='Model', val_sample=True):
+    """
+    Simplified training loop for surface-only, single-output regression.
+    """
+    Path(path).mkdir(parents=True, exist_ok=True)
+
+    model = Net.to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=hparams['lr'])
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(
+        optimizer,
+        max_lr=hparams['lr'],
+        total_steps=(len(train_dataset) // hparams['batch_size'] + 1) * hparams['nb_epochs'],
+    )
+
+    train_losses, val_losses = [], []
+    start = time.time()
+
+    for epoch in range(hparams['nb_epochs']):
+        # (optional) subsampling each epoch if needed
+        sampled_train = []
+        for data in train_dataset:
+            if hparams.get('subsampling') and data.x.size(0) > hparams['subsampling']:
+                idx = random.sample(range(data.x.size(0)), hparams['subsampling'])
+                idx = torch.tensor(idx)
+                d = data.clone()
+                d.pos = d.pos[idx]
+                d.x = d.x[idx]
+                d.y = d.y[idx]
+                sampled_train.append(d)
+            else:
+                sampled_train.append(data)
+        train_loader = DataLoader(sampled_train, batch_size=hparams['batch_size'], shuffle=True)
+
+        val_loader = DataLoader(val_dataset, batch_size=1)
+
+        tr_loss = train_one_epoch(device, model, train_loader, optimizer, scheduler)
+        val_loss = evaluate(device, model, val_loader)
+
+        train_losses.append(tr_loss)
+        val_losses.append(val_loss)
+        print(f"Epoch {epoch+1}/{hparams['nb_epochs']} | train {tr_loss:.5f} | val {val_loss:.5f}")
+
+    # --- Save model ---
+    torch.save(model, osp.join(path, "model"))
+
+    # --- Save a simple train/val plot ---
+    sns.set()
+    plt.figure(figsize=(10, 4))
+    plt.plot(train_losses, label="train MSE")
+    plt.plot(val_losses, label="val MSE")
+    plt.yscale("log")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss (MSE)")
+    plt.title("Training / Validation loss")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(osp.join(path, "loss_curve.png"), dpi=150)
+
+    # --- Log to JSON ---
+    with open(osp.join(path, f"{name_mod}_log.json"), "w") as f:
+        json.dump({
+            "nb_parameters": get_nb_trainable_params(model),
+            "time_elapsed": time.time() - start,
+            "hparams": hparams,
+            "train_losses": train_losses,
+            "val_losses": val_losses
+        }, f, indent=2, cls=NumpyEncoder)
+
     return model
+
