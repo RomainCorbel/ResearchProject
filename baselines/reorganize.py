@@ -1,4 +1,4 @@
-"""import numpy as np
+'''import numpy as np
 
 def reorganize(in_order_points, out_order_points, quantity_to_reordered):
     n = out_order_points.shape[0]
@@ -11,41 +11,40 @@ def reorganize(in_order_points, out_order_points, quantity_to_reordered):
 
     assert (in_order_points[idx] == out_order_points).all()
 
-    return quantity_to_reordered[idx]"""
+    return quantity_to_reordered[idx]'''
 
 import numpy as np
-from scipy.spatial import cKDTree
 
-def reorganize(in_order_points, out_order_points, quantity_to_reordered):
-    """
-    Réordonne `quantity_to_reordered` défini sur in_order_points pour suivre
-    l'ordre de out_order_points.
-
-    - Tente d'abord une correspondance exacte (rapide).
-    - Si ça échoue, utilise un plus proche voisin (KDTree) pour gérer
-      les légers décalages numériques / sous-échantillonnages.
-    """
-    in_order_points  = np.asarray(in_order_points)
-    out_order_points = np.asarray(out_order_points)
-
+def reorganize(in_order_points, out_order_points, quantity_to_reordered, atol=1e-8, rtol=1e-10):
     n = out_order_points.shape[0]
-    idx = np.empty(n, dtype=np.int64)
+    idx = np.empty(n, dtype=int)
 
-    # 1) tentative: correspondance exacte via dict
-    lookup = {tuple(p): i for i, p in enumerate(map(tuple, in_order_points))}
-    exact_ok = True
-    for i, p in enumerate(map(tuple, out_order_points)):
-        j = lookup.get(p, None)
-        if j is None:
-            exact_ok = False
-            break
-        idx[i] = j
+    for i in range(n):
+        # match all coordinates within tolerance (works for any dimensionality)
+        cond = np.all(np.isclose(in_order_points, out_order_points[i], atol=atol, rtol=rtol), axis=1)
+        hits = np.flatnonzero(cond)
 
-    # 2) fallback: nearest neighbor si l'égalité stricte échoue
-    if not exact_ok:
-        tree = cKDTree(in_order_points)
-        # Pour tous les points de sortie, on prend l'indice du plus proche point d'entrée
-        _, nn = tree.query(out_order_points, k=1)
-        idx = nn.astype(np.int64)
+        if hits.size == 0:
+            # fall back to nearest neighbor so we don’t crash, but still guard by tol
+            diffs = in_order_points - out_order_points[i]
+            d2 = np.einsum('ij,ij->i', diffs, diffs)
+            j = int(np.argmin(d2))
+            if d2[j] > atol * atol:
+                raise ValueError(
+                    f"No match for out_order_points[{i}] within atol={atol}/rtol={rtol}; "
+                    f"nearest distance={np.sqrt(d2[j])}."
+                )
+            idx[i] = j
+        else:
+            # if multiple, choose the closest geometrically
+            if hits.size > 1:
+                candidates = in_order_points[hits]
+                d2 = np.sum((candidates - out_order_points[i])**2, axis=1)
+                idx[i] = hits[int(np.argmin(d2))]
+            else:
+                idx[i] = hits[0]
+
+    # tolerance-based sanity check
+    assert np.allclose(in_order_points[idx], out_order_points, atol=atol, rtol=0)
 
     return quantity_to_reordered[idx]

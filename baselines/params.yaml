@@ -1,6 +1,5 @@
 GraphSAGE:
   encoder: [7, 64, 64, 8]
-  #decoder: [8, 64, 64, 4]
   decoder: [8, 64, 64, 1]
 
   nb_hidden_layers: 3
@@ -15,7 +14,6 @@ GraphSAGE:
 
 PointNet:
   encoder: [7, 64, 64, 8]
-  # decoder: [8, 64, 64, 4]
   decoder: [8, 64, 64, 1]
 
   base_nb: 8
@@ -26,7 +24,6 @@ PointNet:
 
 MLP:
   encoder: [7, 64, 64, 8]
-  #decoder: [8, 64, 64, 4]
   decoder: [8, 64, 64, 1]
 
   nb_hidden_layers: 3
@@ -39,9 +36,8 @@ MLP:
 
 GUNet:
   encoder: [7, 64, 64, 8]
-  # decoder: [8, 64, 64, 4]
-  decoder: [8, 64, 64, 1]
-  
+  decoder: [8, 64, 64,1]
+
   layer: 'SAGE'
   pool: 'random'
   nb_scale: 5

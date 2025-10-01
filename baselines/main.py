@@ -28,16 +28,10 @@ val_dataset = manifest_train[-n:]
 #     val_dataset = torch.load('Dataset/val_dataset')
 #     coef_norm = torch.load('Dataset/normalization')
 # else:
-train_dataset, coef_norm = Dataset(train_dataset, 
-                                   norm=True,
-                                   surface_only=True,
-                                   pressure_only=True)
+train_dataset, coef_norm = Dataset(train_dataset, norm = True, sample = 'uniform', surf_ratio = 1)
 # torch.save(train_dataset, 'Dataset/train_dataset')
 # torch.save(coef_norm, 'Dataset/normalization')
-val_dataset = Dataset(val_dataset, 
-                      coef_norm=coef_norm,
-                      surface_only=True,
-                      pressure_only=True)
+val_dataset = Dataset(val_dataset, sample = 'uniform', coef_norm = coef_norm, surf_ratio = 1)
 # torch.save(val_dataset, 'Dataset/val_dataset')
 
 # Cuda
@@ -78,22 +72,25 @@ for i in range(args.nmodel):
     
     log_path = osp.join('metrics', args.task, args.model) # path where you want to save log and figures    
     model = train.main(device, train_dataset, val_dataset, model, hparams, log_path, 
-                criterion = 'MSE_weighted', val_iter = 10, reg = args.weight, name_mod = args.model, val_sample = True)
+                criterion = 'MSE', val_iter = 10, reg = args.weight, name_mod = args.model, val_sample = True)
     models.append(model)
 torch.save(models, osp.join('metrics', args.task, args.model, args.model))
 
 if bool(args.score):
     s = args.task + '_test' if args.task != 'scarce' else 'full_test'
-    coefs = metrics.Results_test(device, [models], [hparams], coef_norm, path_in = 'Dataset', path_out = 'scores', n_test = 3, criterion = 'MSE', s = s)
-    # models can be a stack of the same model (for example MLP) on the task s, if you have another stack of another model (for example GraphSAGE)
-    # you can put in model argument [models_MLP, models_GraphSAGE] and it will output the results for both models (mean and std) in an ordered array.
-    os.makedirs(os.path.join('scores', args.task), exist_ok=True)
-    np.save(osp.join('scores', args.task, 'true_coefs'), coefs[0])
-    np.save(osp.join('scores', args.task, 'pred_coefs_mean'), coefs[1])
-    np.save(osp.join('scores', args.task, 'pred_coefs_std'), coefs[2])
-    for n, file in enumerate(coefs[3]):
-        np.save(osp.join('scores', args.task, 'true_surf_coefs_' + str(n)), file)
-    for n, file in enumerate(coefs[4]):
-        np.save(osp.join('scores', args.task, 'surf_coefs_' + str(n)), file)
-    np.save(osp.join('scores', args.task, 'true_bls'), coefs[5])
-    np.save(osp.join('scores', args.task, 'bls'), coefs[6])
+    true_coefs, pred_mean, pred_std = metrics.Results_test(
+        device, [models], [hparams], coef_norm,
+        path_in='Dataset', path_out='scores',
+        n_test=3, criterion='MSE', s=s
+    )
+
+   # Créer le dossier pour ce modèle spécifique
+    score_dir = os.path.join('scores', args.task, args.model)
+    os.makedirs(score_dir, exist_ok=True)
+    
+    # Sauvegarder dans le bon dossier
+    np.save(osp.join(score_dir, 'true_coefs'), true_coefs)
+    np.save(osp.join(score_dir, 'pred_coefs_mean'), pred_mean)
+    np.save(osp.join(score_dir, 'pred_coefs_std'), pred_std)
+
+    print(f"Scores saved in: {score_dir}")

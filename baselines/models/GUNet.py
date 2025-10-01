@@ -6,6 +6,7 @@ import random
 def DownSample(id, x, edge_index, pos_x, pool, pool_ratio, r, max_neighbors):
     y = x.clone()
     n = int(x.size(0))
+    dev = x.device  # device du modèle (GPU/CPU)
 
     if pool is not None:
         y, _, _, _, id_sampled, _ = pool(y, edge_index)
@@ -18,18 +19,20 @@ def DownSample(id, x, edge_index, pos_x, pool, pool_ratio, r, max_neighbors):
     pos_x = pos_x[id_sampled]
     id.append(id_sampled)
 
-    # if training:
-    #     edge_index_sampled = nng.radius_graph(x = pos_x.detach(), r = r, loop = True, max_num_neighbors = 64)
-    # else:
-    #     edge_index_sampled = nng.radius_graph(x = pos_x.detach(), r = r, loop = True, max_num_neighbors = 512)
-    edge_index_sampled = nng.radius_graph(x = pos_x.detach(), r = r, loop = True, max_num_neighbors = max_neighbors)
+    # --- CPU ONLY pour torch_cluster.radius_graph ---
+    pos_x_cpu = pos_x.detach().cpu()
+    edge_index_sampled = nng.radius_graph(
+        x=pos_x_cpu, r=r, loop=True, max_num_neighbors=max_neighbors
+    ).to(dev)  # remettre sur le device du modèle
 
     return y, edge_index_sampled
 
-def UpSample(x, pos_x_up, pos_x_down):
-    cluster = nng.nearest(pos_x_up, pos_x_down)
-    x_up = x[cluster]
 
+def UpSample(x, pos_x_up, pos_x_down):
+    dev = x.device
+    # --- CPU ONLY pour torch_cluster.nearest ---
+    cluster = nng.nearest(pos_x_up.detach().cpu(), pos_x_down.detach().cpu()).to(dev)
+    x_up = x[cluster]
     return x_up
 
 class GUNet(nn.Module):

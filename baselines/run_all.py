@@ -2,8 +2,10 @@ import subprocess
 import sys
 from itertools import product
 
-MODELS = ["MLP"]
+
+MODELS = ["MLP", "PointNet", "GraphSAGE", "GUNet"]
 TASKS = ["scarce"]
+
 
 def run(cmd):
     print("=" * 80)
