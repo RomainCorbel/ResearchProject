@@ -71,7 +71,7 @@ def cell_sampling_1d(line_points, line_attr = None):
     return np.hstack([sampled_point[:, :2], sampled_attr]) if line_attr is not None else sampled_point[:, :2]
 
 # def Dataset(set, norm = False, coef_norm = None, crop = None, sample = None, n_boot = int(5e5), surf_ratio = .1):
-def Dataset(set, norm = False, coef_norm = None, crop = None, sample = 'uniform', n_boot = int(200), surf_ratio = 1):
+def Dataset(set, norm = False, coef_norm = None, crop = None, sample = 'uniform', n_boot = int(500), surf_ratio = 1):
     '''
     Create a list of simulation to input in a PyTorch Geometric DataLoader. Simulation are transformed by keeping vertices of the CFD mesh or 
     by sampling (uniformly or via the mesh density) points in the simulation cells.
