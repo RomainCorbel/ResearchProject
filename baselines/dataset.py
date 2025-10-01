@@ -149,6 +149,11 @@ def Dataset(set, norm = False, coef_norm = None, crop = None, sample = 'uniform'
             surf_init = surf_sampled_points[:, :7]
             surf_target = surf_sampled_points[:, 7:]
 
+            #print("surf_target (first 5 rows):") #[u,v,p,kinematic vicosity]=[0,0,p,0]
+            # print(surf_target[:5])
+
+            # print("\nsurf_init (first 5 rows):") #[x,y,u_inf,v_inf,dist_to_airfoil = 0,nx,ny]
+            # print(surf_init[:5])
             # if cell_centers:
             #     centers = internal.ptc().cell_centers()
             #     surf_centers = aerofoil.cell_centers()
