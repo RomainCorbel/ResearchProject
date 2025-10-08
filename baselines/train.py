@@ -158,7 +158,7 @@ def main(device, train_dataset, val_dataset, Net, hparams, path,
 
             # build edges if needed (graph models)
             if name_mod not in ('PointNet', 'MLP'):
-                '''
+                
                 data_sampled.edge_index = nng.radius_graph(
                     x=data_sampled.pos.to(device),
                     r=hparams['r'],
@@ -172,6 +172,7 @@ def main(device, train_dataset, val_dataset, Net, hparams, path,
                     loop=True,
                     max_num_neighbors=int(hparams['max_neighbors'])
                 ).cpu()
+                '''
             train_dataset_sampled.append(data_sampled)
 
         train_loader = DataLoader(
@@ -205,7 +206,7 @@ def main(device, train_dataset, val_dataset, Net, hparams, path,
                         data_sampled.surf = data_sampled.surf[idx]
 
                         if name_mod not in ('PointNet', 'MLP'):
-                            '''
+                            
                             data_sampled.edge_index = nng.radius_graph(
                                 x=data_sampled.pos.to(device),
                                 r=hparams['r'],
@@ -219,6 +220,7 @@ def main(device, train_dataset, val_dataset, Net, hparams, path,
                                 loop=True,
                                 max_num_neighbors=int(hparams['max_neighbors'])
                             ).cpu()
+                            '''
                         val_dataset_sampled.append(data_sampled)
 
                     val_loader = DataLoader(val_dataset_sampled, batch_size=1, shuffle=True)

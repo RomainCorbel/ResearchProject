@@ -44,4 +44,50 @@
   },
   "train_loss": 0.0008273532148450613,
   "val_loss": 0.01622483750063111
+}{
+  "task": "pressure_surface_only",
+  "loss": "MSE",
+  "nb_parameters": 65625.0,
+  "time_elapsed": 1036.040387392044,
+  "hparams": {
+    "encoder": [
+      7,
+      64,
+      64,
+      8
+    ],
+    "decoder": [
+      8,
+      64,
+      64,
+      1
+    ],
+    "layer": "SAGE",
+    "pool": "random",
+    "nb_scale": 5,
+    "pool_ratio": [
+      0.5,
+      0.5,
+      0.5,
+      0.5
+    ],
+    "list_r": [
+      0.05,
+      0.2,
+      0.5,
+      1,
+      10
+    ],
+    "size_hidden_layers": 8,
+    "batchnorm": true,
+    "res": false,
+    "batch_size": 1,
+    "nb_epochs": 398,
+    "lr": 0.001,
+    "max_neighbors": 64,
+    "subsampling": 32000,
+    "r": 0.05
+  },
+  "train_loss": 0.0017104273429140449,
+  "val_loss": 0.029888958425726742
 }

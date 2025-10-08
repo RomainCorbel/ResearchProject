@@ -66,8 +66,16 @@ def Results_test(device, models_list, hparams_list, coef_norm, path_in='Dataset'
                     
                     # Build edges for graph models only (not for MLP or PointNet)
                     if 'r' in hparams and hparams['r'] is not None:
+                        '''
                         data_sampled.edge_index = nng.radius_graph(
                             x=data_sampled.pos,
+                            r=hparams['r'],
+                            loop=True,
+                            max_num_neighbors=int(hparams['max_neighbors'])
+                        ).cpu()
+                        '''
+                        data_sampled.edge_index = nng.radius_graph(
+                            x=data_sampled.pos.to(device),
                             r=hparams['r'],
                             loop=True,
                             max_num_neighbors=int(hparams['max_neighbors'])

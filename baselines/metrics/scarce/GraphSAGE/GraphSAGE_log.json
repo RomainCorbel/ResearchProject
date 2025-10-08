@@ -28,4 +28,34 @@
   },
   "train_loss": 0.00023151877394411713,
   "val_loss": 0.020143354026513405
+}{
+  "task": "pressure_surface_only",
+  "loss": "MSE",
+  "nb_parameters": 29009.0,
+  "time_elapsed": 360.8674907684326,
+  "hparams": {
+    "encoder": [
+      7,
+      64,
+      64,
+      8
+    ],
+    "decoder": [
+      8,
+      64,
+      64,
+      1
+    ],
+    "nb_hidden_layers": 3,
+    "size_hidden_layers": 64,
+    "batch_size": 1,
+    "nb_epochs": 398,
+    "lr": 0.001,
+    "max_neighbors": 64,
+    "bn_bool": true,
+    "subsampling": 32000,
+    "r": 0.05
+  },
+  "train_loss": 8.570311183575541e-05,
+  "val_loss": 0.22426968040876089
 }
